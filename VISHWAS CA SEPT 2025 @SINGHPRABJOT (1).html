@@ -1,0 +1,3341 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Course Player</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --text-color: #1f2937;
+            --bg-color: #f3f4f6;
+            --card-bg: #ffffff;
+            --hover-color: #f8fafc;
+            --border-color: #e5e7eb;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 12px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .batch-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 16px;
+            padding: 0 8px;
+        }
+
+        .batch-thumbnail {
+            width: 80px;
+            height: 80px;
+            border-radius: 12px;
+            object-fit: cover;
+            background: var(--bg-color);
+            flex-shrink: 0;
+        }
+
+        .batch-title {
+            flex-grow: 1;
+        }
+
+        .batch-title h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-color);
+            margin: 0;
+            line-height: 1.3;
+        }
+
+        .search-container {
+            position: relative;
+            margin: 0 8px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 16px;
+            font-size: 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            outline: none;
+            transition: all 0.3s ease;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        .search-input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .content-list {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 12px;
+            box-shadow: var(--shadow);
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .content-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            touch-action: pan-y pinch-zoom;
+            display: flex;
+            align-items: center;
+        }
+
+        .content-card a {
+            color: var(--text-color);
+            text-decoration: none;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px;
+            font-size: 0.95rem;
+            line-height: 1.4;
+            pointer-events: none;
+            flex-grow: 1;
+        }
+
+        .content-icon {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            color: var(--primary-color);
+            font-size: 1.2rem;
+        }
+
+        .video-card .content-icon::before {
+            content: "▶";
+        }
+
+        .pdf-card .content-icon::before {
+            content: "📄";
+        }
+
+        .play-button {
+            position: absolute;
+            right: 16px;
+            width: 32px;
+            height: 32px;
+            background: var(--primary-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            pointer-events: auto;
+            cursor: pointer;
+            z-index: 2;
+        }
+
+        @media (hover: hover) {
+            .content-card:hover {
+                transform: translateY(-2px);
+                box-shadow: var(--shadow);
+            }
+
+            .content-card a:hover {
+                color: var(--primary-color);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .content-card {
+                margin: 0 4px;
+            }
+
+            .content-card:active {
+                background: var(--hover-color);
+                transform: scale(0.98);
+            }
+        }
+
+        .player-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: none;
+            z-index: 1000;
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+        }
+
+        .player-container.active {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .player-wrapper {
+            width: 100%;
+            height: 100%;
+            max-width: 100%;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-player {
+            position: absolute;
+            right: 16px;
+            top: 16px;
+            width: 40px;
+            height: 40px;
+            background: var(--card-bg);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--text-color);
+            font-size: 24px;
+            z-index: 1001;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            max-height: 100vh;
+            border: none;
+        }
+
+        @media (orientation: landscape) {
+            .player-wrapper {
+                padding: 0 48px;
+            }
+            
+            iframe {
+                max-height: 90vh;
+                width: auto;
+                aspect-ratio: 16/9;
+            }
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 24px;
+            color: #6b7280;
+            font-size: 1rem;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1002;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            margin: 0 auto;
+            border: 4px solid var(--border-color);
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Touch device optimizations */
+        @media (hover: none) {
+            .search-input {
+                font-size: 16px; /* Prevent zoom on iOS */
+            }
+
+            .content-card {
+                padding: 0;
+            }
+
+            .content-card a {
+                padding: 16px;
+                min-height: 60px;
+                display: flex;
+                align-items: center;
+            }
+
+            .video-card::after {
+                font-size: 18px;
+                right: 12px;
+            }
+        }
+
+        /* iOS Safari specific styles */
+        @supports (-webkit-touch-callout: none) {
+            .player-container {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                height: -webkit-fill-available;
+            }
+
+            .close-player {
+                top: max(16px, env(safe-area-inset-top));
+                right: max(16px, env(safe-area-inset-right));
+            }
+        }
+
+        /* Pull to refresh disable */
+        body {
+            overscroll-behavior-y: contain;
+        }
+
+        /* Sticky header improvements */
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            margin: -12px -12px 16px -12px;
+            border-radius: 0;
+            padding: 12px 12px calc(12px + env(safe-area-inset-bottom));
+        }
+
+        /* Dark mode support */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --text-color: #e5e7eb;
+                --bg-color: #111827;
+                --card-bg: #1f2937;
+                --border-color: #374151;
+                --hover-color: #374151;
+            }
+
+            .loading {
+                background: rgba(31, 41, 55, 0.9);
+            }
+
+            .player-container {
+                background: rgba(0, 0, 0, 0.98);
+            }
+
+            .batch-thumbnail {
+                border: 1px solid var(--border-color);
+            }
+        }
+    </style>
+</head>
+<body>
+
+ <div style="margin-top: 20px; font-size: 18px; text-align: center;">
+  Extracted by - <a href="https://t.me/CaAspirants2025" target="_blank"><strong>@SINGHPRABJOT</strong></a>
+ </div>
+    
+    <div class="container">
+        <div class="header">
+            <div class="batch-info">
+                <img src="BATCH_THUMBNAIL" alt="" class="batch-thumbnail" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'80\' height=\'80\' viewBox=\'0 0 24 24\'%3E%3Cpath fill=\'%23e5e7eb\' d=\'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4z\'/%3E%3C/svg%3E'">
+                <div class="batch-title">
+                    <h1>ClassPlus Course Content (🎬 Videos: 543 | 📄 PDFs: 0)</h1>
+                </div>
+            </div>
+            <div class="search-container">
+                <input type="text" class="search-input" placeholder="Search content..." id="searchInput">
+            </div>
+        </div>
+        <div class="content-list">
+            <div class="loading" id="loading">
+                <div class="loading-spinner"></div>
+            </div>
+            <div class="content-grid" id="contentGrid">
+                
+                <div class="content-card video-card">
+                    <a>(HOW TO WATCH LECTURES DAILY) Quant Recorded Strategy</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66d00bf8d8987508eca39436/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Day wise Quantitative Aptitude  Revision plan) Day wise Quantitative Aptitude  Revision plan</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/67286644b29cac68434d9554/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 1 Basics of Accounts</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae1803c50a970c358d077b/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 2 Basics of Accounts</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae181be9eabfd04bddcdde/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 3 Basics of Accounts</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af20d9c50a970c358e9c57/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 4 Basics of Accounts</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af2331c50a970c358ea1d3/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 5 Basics of Accounts</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af2061e9eabfd04bdf6075/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 6 Basics of Accounts</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae181ac50a970c358d07bd/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 7 Basics of Accounts</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af23a9c50a970c358ea2dd/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 8 Basics of Accounts</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae282de9eabfd04bddfaff/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 1 Accounting Assumption & Principle</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae180dc50a970c358d0799/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 2 Accounting Assumption & Principle</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af263dc50a970c358ea8d4/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 3 Accounting Assumption & Principle</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae1811c50a970c358d07a3/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 1 Bank Reconciliation Statement</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af23e5c50a970c358ea360/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 2 Bank Reconciliation Statement</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af245de9eabfd04bdf6a43/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 3 Bank Reconciliation Statement</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af2283c50a970c358ea043/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 4 Bank Reconciliation Statement</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af1fe9c50a970c358e98b0/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 5 Bank Reconciliation Statement</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af2025c50a970c358e9974/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 6 Bank Reconciliation Statement</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af258ac50a970c358ea738/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 1 Rectification of Error</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5e88c50a970c358db9e2/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 2 Rectification of Error</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5e79e9eabfd04bde7ff2/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 3 Rectification of Error</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5e7ec50a970c358db9cb/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 4 Rectification of Error</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5e21c50a970c358db8c4/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 5 Rectification of Error</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5e29e9eabfd04bde7f18/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 1 Depreciation</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5e3bc50a970c358db907/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 2 Depreciation</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5e45c50a970c358db927/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 3 Depreciation</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5e4fc50a970c358db947/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 4 Depreciation | Provision for Depreciation</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5e61c50a970c358db981/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 5 Depreciation</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af4d25c50a970c358efac3/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 6 Depreciation</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af4ddac50a970c358efc53/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 1 Final Account ( Non - Mfg )</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af542dc50a970c358f0ab4/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 2 Final Account ( Non - Mfg )</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af4fb9c50a970c358f00ca/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 3 Final Account ( Non - Mfg )</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af50aae9eabfd04bdfc88c/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 4 - Final Accounts (Non-Mfg)</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af515ec50a970c358f0497/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 5 Final Account ( Non - Mfg ) Accounts</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af4cadc50a970c358ef9b9/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 1 Final Accounts Manufacturing</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af5469c50a970c358f0b31/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 1 Accounting Of Incomplete Records</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/73xm8-2786685/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 2 Accounting Of Incomplete Records</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/bb49k-2790090/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 3 Accounting Of Incomplete Records</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/6ifgd-2793673/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 4 Accounting Of Incomplete Records</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/deltk-2797262/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 1 Non-Profit Organisation</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/feubj-2804739/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 2 Non-Profit Organisation</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/t592t-2808824/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 3 Non-Profit Organisation</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/fv3fj-2812764/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 4 Non-Profit Organisation</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/cc/30f2b783ec09474fb8850d646114f054/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 5 Non-Profit Organisation</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/4iubh-2819623/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 6 Non-Profit Organisation</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/hvd3t-2824470/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 1 Share Capital</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/idimz-2827721/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 2 Company Accounts ( share capital)</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/k4ztk-2831801/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 3 Company Accounts ( share capital)</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/xe46y-2835106/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 4 Company Accounts ( share capital)</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/z111k-2839689/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 5 Company Accounts ( share capital)</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/mz407-2844125/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 6 Company Accounts ( share capital)</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/ogljy-2847018/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 7 Company Accounts ( share capital)</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/2b6sj-2851587/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 8 Company Accounts ( share capital)</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/kwhi4-2856038/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 1 - Debentures</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/9bsx1-2861486/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 2 Company Accounts ( debenture)</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/re8ou-2869384/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 3 Company Accounts ( debenture)</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/6pntr-2873948/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 1 Redemption of Preference Share</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/bsm42-2877289/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 2 Redemption of Preference Share</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/t7waw-2880704/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 3 Redemption of Preference Share</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/g0fpx-2888826/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 1 Redemption of Debentures</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/8wg3h-2892730/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 2 Redemption of Debentures</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/1g7m5-2901044/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 3 Redemption of Debentures</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/vj0y5-2905338/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 1 Bonus & Right Issue</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/tm947-2909016/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 2 Bonus & Right Issue</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/q00ma-2913700/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 3 - Bonus & Right Issue</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/ilsh5-2915409/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 1 Partnership Accounts</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/xwpsd-2917623/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 2 Partnership Accounts</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/lshxm-2920331/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 3 Partnership Accounts</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/z2s8j-2922300/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 4 Partnership Accounts</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/99sui-2925574/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 5 Partnership Accounts</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/ooy7i-2934299/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 6 Partnership Accounts</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66b0640fc50a970c35908442/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 7 Retirement of Partner</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66b1ad95c50a970c3592d300/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 9 Retirement of partner</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66b49e29c50a970c3598a178/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 8 Retirement of partner</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66b33ad9e9eabfd04be6a65f/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 10 Death of partner</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/67064741b07df8d174da8ace/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 11 Death of partner</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6708eee947a1e03486df7559/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 12 Death of partner</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/670ceda28f438e0556e064cd/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 13 Disssolution of partnership</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/670e2f498f438e0556e64e94/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 14 Disssolution of partnership</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/670f80401b9b5b7a27c4779d/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 15 Disssolution of partnership</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6710dd121b9b5b7a27cb4caf/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 16 Dissolution of partnership</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/671224b7768dde90e6dc9ba5/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 17 Disssolution of partnership</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/67136fbc768dde90e6e3003f/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 1 Bills of Exchange</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66d6d7bb99d974d9cad77455/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 2 Bills of Exchange</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66d8223c99d974d9cadd1629/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 3 - Bill of Exchange</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66d85a6099d974d9cade802b/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 4 - Bill of Exchange</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66d9b4802592932b9412a238/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 1 Inventory</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/sahta-3061553/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 2 Inventory</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/r2lx0-3065669/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 3 Inventory</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/pis3u-3069819/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 4 Inventory</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/lrjqg-3076743/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 5 Inventory</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/up4mk-3089547/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 6 Inventory</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/smks7-3101100/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 1 Theory Of Demand And Supply</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5eb9e9eabfd04bde80a9/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 2 Theory Of Demand And Supply</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5f03c50a970c358dbb40/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 3 Theory Of Demand And Supply</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5f01c50a970c358dbb3c/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 4 Theory Of Demand And Supply</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af29c1c50a970c358eb096/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 5 Theory Of Demand And Supply</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5e9fc50a970c358dba1b/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 6 Theory Of Demand And Supply</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5e9ac50a970c358dba0f/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 7 Theory Of Demand And Supply</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5e7ce9eabfd04bde7ffb/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 8 Theory Of Demand And Supply</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5ecfc50a970c358dbaad/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 9 Theory Of Demand And Supply</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5e70c50a970c358db9a2/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 1 Price Determination In Different Markets</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5e8fc50a970c358db9f4/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 2 Price Determination In Different Maekets</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5e87e9eabfd04bde801b/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 3 Price Determination In Different Markets</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5eaec50a970c358dba4c/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 4 Price Determination In Different Markets</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5ea7c50a970c358dba32/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 5 Price Determination In Different Markets</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5ed2e9eabfd04bde80e8/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 6 Price Determination In Different Markets</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5ea5c50a970c358dba29/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 7 Price Determination In Different Markets</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5ed1c50a970c358dbab2/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 8 Price Determination In Different Markets</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5e81e9eabfd04bde8009/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 9 Price determination in different markets</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5e7ac50a970c358db9be/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 10 Price determination in different markets</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5eefc50a970c358dbb11/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 1 Theory Of Production & Cost</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5eccc50a970c358dbaa1/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 2 Theory Of Production & Cost</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae6d15e9eabfd04bdea198/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 3 Theory Of Production & Cost</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5e24c50a970c358db8cc/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 4 Theory Of Production & Cost</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5e31c50a970c358db8ee/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 5 Theory Of Production & Cost</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5e3fe9eabfd04bde7f55/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 6 Theory Of Production & Cost</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5e4ac50a970c358db936/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 7 Theory Of Production & Cost</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5e56e9eabfd04bde7fa0/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 1 Determination Of National Income</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5e15e9eabfd04bde7ed6/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 2 Determination Of National Income</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5e5fc50a970c358db97b/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 3 Determination Of National Income</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5e69e9eabfd04bde7fd2/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 4 Determination Of National Income</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af4e8dc50a970c358efe07/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 5 Determination Of National Income</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af4f05c50a970c358eff26/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 6 Determination Of National Income</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af5031e9eabfd04bdfc77c/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 7 Determination Of National Income</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af3e61c50a970c358edb49/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 8 Determination Of National Income</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af51d5c50a970c358f05a6/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 9 Determination Of National Income</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/q2mc6-2769361/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 1 BUSINESS CYCLES</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/jtnnf-2780087/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 2 BUSINESS CYCLES</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/80uwg-2786704/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) part-1 NATURE & SCOPE OF BUSINESS ECONOMICS</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/3tfvd-2790129/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 2 Nature & scope Of The Business Economics</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/0nc88-2793709/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 3 Nature & scope Of The Business Economics</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/lsg0r-2800048/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 1 Indian Economy</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/mlsgj-2804799/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 2 Indian Economy</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/hzri6-2808902/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 3 Indian Economy</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/a48b4-2816362/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 4 Indian Economy</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/kn8hp-2819668/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 5 Indian Economy</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/i1icd-2824474/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 6 Indian Economy</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/00ges-2827737/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 7 Indian Economy</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/9p022-2831816/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 8 Indian Economy</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/x5khc-2835121/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 9 Indian Economy</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/cszxg-2839949/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 1 PUBLIC FINANCE</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/20qj9-2847474/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 2 PUBLIC FINANCE</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/ct1fx-2851616/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 3 PUBLIC FINANCE</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/qef7o-2856063/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 4 PUBLIC FINANCE</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/0jomv-2861508/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 5 PUBLIC FINANCE</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/90mbx-2865583/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 6 PUBLIC FINANCE</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/jcg10-2873953/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 1 UNIT 2 PUBLIC FINANCE</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/sw0zk-2877308/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 2 unit-2 PUBLIC FINANCE</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/emmr4-2880719/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 3 Unit-2 PUBLIC FINANCE</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/cnox3-2888847/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 4 Unit-2 PUBLIC FINANCE</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/cmqji-2892747/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 5 Unit-2 PUBLIC FINANCE</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/5qfk6-2896075/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 6 Unit-2 PUBLIC FINANCE</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/z6rkm-2901061/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 1 Unit-3 PUBLIC FINANCE</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/mmt7r-2905325/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 2 Unit-3 PUBLIC FINANCE</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/o4dtb-2913723/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 3 Unit-3 PUBLIC FINANCE</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/ndbdc-2920343/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 4 Unit-3 PUBLIC FINANCE</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/nfglq-2925584/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 5 Unit-3 PUBLIC FINANCE</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/9f19n-2930546/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 6 Unit-3 PUBLIC FINANCE</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/67fzc-2934323/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 3 Unit-4 PUBLIC FINANCE</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/84vk5-2938205/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) money market unit-1 | PART-1</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66b0b8b0e9eabfd04be22ee3/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 2 Money Market unit 1</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66b1e035e9eabfd04be42086/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 3 Money Market unit 1</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66b3241de9eabfd04be669b3/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 4 Money Market</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66b5d8e2c50a970c359acc07/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 5 Money Market</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66bb23afe9eabfd04bf5ae6a/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 6 Money Market</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66bc6823e9eabfd04bf80fec/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 1 International Trade</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66bda46ac50a970c35a979cc/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 2 International Trade</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66bf1b2ae9eabfd04bfd2aaa/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 3 International Trade</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66c05539c50a970c35ae7f79/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 1  VCA E-BOOK QUESTION BANK SOLUTION</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66c415b2e9eabfd04b046e37/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 3  VCA E-BOOK QUESTION BANK SOLUTION</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/faabm-3004929/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 2  VCA E-BOOK QUESTION BANK SOLUTION</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/shlbd-3002722/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 5  VCA E-BOOK QUESTION BANK SOLUTION</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/lkdq0-3013364/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 4  VCA E-BOOK QUESTION BANK SOLUTION</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/ehryc-3009403/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 6  VCA E-BOOK QUESTION BANK SOLUTION</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/zszlt-3016882/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 1 The Indian Contract Act, 1872</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae6d16e9eabfd04bdea19c/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 2 The Indian Contract Act, 1872</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5ec7e9eabfd04bde80cc/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 3 The Indian Contract Act, 1872</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae6c9ee9eabfd04bdea0b0/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 4 The Indian Contract Act, 1872</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5e96e9eabfd04bde8042/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 5 The Indian Contract Act, 1872</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae6d8dc50a970c358ddc8c/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 6 The Indian Contract Act, 1872</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5eb8c50a970c358dba6a/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 7 The Indian Contract Act, 1872</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae6c9dc50a970c358ddaab/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 8 The Indian Contract Act, 1872</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af2986c50a970c358eb017/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 9 The Indian Contract Act, 1872</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5ebdc50a970c358dba82/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 10 The Indian Contract Act, 1872</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae6e06c50a970c358ddd62/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 11 The Indian Contract Act, 1872</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5e18e9eabfd04bde7ee3/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 12 The Indian Contract Act, 1872</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5e8de9eabfd04bde8030/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 13 The Indian Contract Act, 1872</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5ef7e9eabfd04bde8154/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 14 The Indian Contract Act, 1872</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae1802e9eabfd04bddcd95/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 15 The Indian Contract Act, 1872</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae182be9eabfd04bddce0b/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 16 The Indian Contract Act, 1872</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af2153e9eabfd04bdf6362/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 17 The Indian Contract Act, 1872</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af21c9c50a970c358e9e98/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 18 The Indian Contract Act, 1872</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae1807c50a970c358d0786/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 19 The Indian Contract Act, 1872</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae26c6e9eabfd04bddf6cb/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 20 The Indian Contract Act, 1872</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5edec50a970c358dbada/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 21 The Indian Contract Act, 1872</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5f02e9eabfd04bde8170/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 22 The Indian Contract Act, 1872</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5e20e9eabfd04bde7efd/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 23 The Indian Contract Act, 1872</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5e28e9eabfd04bde7f13/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 24 The Indian Contract Act, 1872</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5e35e9eabfd04bde7f31/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 25 The Indian Contract Act, 1872</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5e43c50a970c358db921/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 26 The Indian Contract Act, 1872</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5e4de9eabfd04bde7f7b/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 27 The Indian Contract Act, 1872</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5e57c50a970c358db962/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 28 The Indian Contract Act, 1872</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5e60e9eabfd04bde7fba/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 29 The Indian Contract Act, 1872</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af4ce9e9eabfd04bdfbff3/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 30 The Indian Contract Act, 1872</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af4dd9e9eabfd04bdfc1fd/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 31 The Indian Contract Act, 1872</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af4e8ec50a970c358efe0a/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 32 The Indian Contract Act, 1872</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af4f7dc50a970c358f002f/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 33 The Indian Contract Act, 1872</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af50a9e9eabfd04bdfc888/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 34 The Indian Contract Act, 1872 Business law</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af515de9eabfd04bdfca31/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 35 The Indian Contract Act, 1872</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af5211c50a970c358f0636/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 36 The Indian Contract Act, 1872</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af52c5e9eabfd04bdfcd66/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 37 The Indian Contract Act, 1872</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/p6mzp-2772988/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 38 The Indian Contract Act, 1872</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/lxdea-2776591/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 39 The Indian Contract Act, 1872</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/o46og-2780074/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 40 The Indian Contract Act, 1872</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/eo90l-2786714/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 41 The Indian Contract Act, 1872</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/gf5eh-2793719/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 42 The Indian Contract Act, 1872</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/okyw2-2793771/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 43 The Indian Contract Act, 1872</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/xg6l0-2800052/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 44 The Indian Contract Act, 1872</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/pn6nf-2804859/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 1 The Sale of Goods Act, 1930</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/jdxec-2808906/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 2 The Sale of Goods Act, 1930</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/7od11-2812793/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 3 The Sale of Goods Act, 1930</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/rdi5y-2816366/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 4 The Sale of Goods Act, 1930</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/515vd-2824476/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 6 The Sale of Goods Act, 1930</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/zbf27-2831830/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 8 The Sale of Goods Act, 1930</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/qzdgc-2839933/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 7 The Sale of Goods Act, 1930</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/mzb5w-2835563/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 5 The Sale of Goods Act, 1930</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/apztb-2827750/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 10 The Sale of Goods Act, 1930</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/mqgt8-2847448/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 11 The Sale of Goods Act, 1930</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/thfx6-2851604/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 9 The Sale of Goods Act, 1930</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/s7lsg-2846891/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 12 The Sale of Goods Act, 1930</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/2945q-2856050/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 13 The Sale of Goods Act, 1930</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/xthyw-2861723/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 14 The Sale of Goods Act, 1930</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/nm0qx-2865564/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 2 The Companies Act, 2013</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/fsb86-2873952/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 1 The Companies Act, 2013</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/yrc2j-2869377/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 3 The Companies Act, 2013</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/94kg8-2880712/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 4 The Companies Act, 2013</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/qcjzv-2888837/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 5 The Companies Act, 2013</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/0edee-2896064/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 6 The Companies Act, 2013</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/qzc9a-2897235/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 7 The Companies Act, 2013</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/5df88-2901052/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 8 The Companies Act, 2013</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/6slwl-2905351/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 9 The Companies Act, 2013</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/cc/e7be21838df84b269f44c6448b5d733f/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 10 The Companies Act, 2013</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/au881-2913709/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 11 The Companies Act, 2013</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/eq1mh-2917600/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 12 The Companies Act, 2013</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/ygmd0-2927996/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 13 The Companies Act, 2013</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/6t0xc-2930541/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 14 The Companies Act, 2013</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/pojke-2934314/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part1 Indian Regulatory Framework</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/cc/8bef6e9e583f45408628e767616b10c2/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 1 The Indian Partnership Act, 1932</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/35lwm-2938197/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 2 The Indian Partnership Act, 1932</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/r2u3r-2942987/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 5 The Indian Partnership Act, 1932</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66b32729c50a970c3595acb2/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 3 The Indian Partnership Act, 1932</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66b091c1e9eabfd04be1c4b7/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 4 The Indian Partnership Act, 1932</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66b1cd41c50a970c35932bdb/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 6  The Indian Partnership Act, 1932</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66b46da6c50a970c35982138/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 7  The Indian Partnership Act, 1932</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66b5a046c50a970c359a3829/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 9  The Indian Partnership Act, 1932</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66b78020e9eabfd04bef3501/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 8  The Indian Partnership Act, 1932</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66b71690c50a970c359d3c67/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 1 The Limited Liability Partnership Act, 2008</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66b99698e9eabfd04bf27f63/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 2 The Negotiable Instruments Act 1881</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66bb65a7c50a970c35a59da0/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 1 The Negotiable Instruments Act 1881</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ba13ebc50a970c35a31317/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 3 The Negotiable Instruments Act 1881</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66bc3ca4e9eabfd04bf79c3d/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 5 The Negotiable Instruments Act 1881</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66bf64c5e9eabfd04bfde41a/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 4 The Negotiable Instruments Act 1881</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66bcece0c50a970c35a8b217/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Sampling</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66b0c774e9eabfd04be258bb/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 1 Basics of Mathematics</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af2589e9eabfd04bdf6ce5/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 2 Basics of Mathematics</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af220bc50a970c358e9f33/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 1 Ratio Proportion Indices and Logarithm</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af31b9e9eabfd04bdf87ac/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 2 Ratio Proportion Indices and Logarithm</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af2207c50a970c358e9f2a/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 3 Ratio Proportion Indices and Logarithm</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af2115c50a970c358e9d16/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 4 Ratio Proportion Indices and Logarithm</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af3141e9eabfd04bdf86a3/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 5 Ratio Proportion Indices and Logarithm</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae26c5c50a970c358d3079/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 6 Ratio Proportion Indices and Logarithm</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae1808e9eabfd04bddcda4/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 7 Ratio Proportion Indices and Logarithm</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af1fade9eabfd04bdf5df7/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 1 Mathematics of Finance</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae2689c50a970c358d2ff0/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 2 Mathematics of Finance</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae2701e9eabfd04bddf77a/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 3 Mathematics of Finance</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af3321c50a970c358ec4c1/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 4 Mathematics of Finance</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af26b6c50a970c358ea9e9/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 5 Mathematics of Finance</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af1faec50a970c358e981b/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 6 Mathematics of Finance</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae27f1c50a970c358d340e/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 7 Mathematics of Finance</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae27b5c50a970c358d3368/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 8 Mathematics of Finance</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af209dc50a970c358e9b39/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 1 Number Series , Coding Decoding , Odd Man Out</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af26f1e9eabfd04bdf7019/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 2 Number Series , Coding Decoding , Odd Man Out</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af1ef9e9eabfd04bdf5c15/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 1 Direction Test</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5ebac50a970c358dba76/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 2 Direction Test</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5e1ee9eabfd04bde7ef2/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 1 Seating Arrangement</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5e1fe9eabfd04bde7ef8/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 2 Seating Arrangement</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5e23e9eabfd04bde7f06/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 1 Blood Relation</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5e30c50a970c358db8e8/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 2 Blood Relation</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5e3de9eabfd04bde7f4b/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 2 Statistical Description of Data</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5e55c50a970c358db95c/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 1 Statistical Description of Data</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5e46c50a970c358db92c/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 4 Statistical Description of Data</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af2985c50a970c358eb012/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 3 Statistical Description of Data</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5e5ec50a970c358db977/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 2 Measure of Central Tendance and Dispersion</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af4e15e9eabfd04bdfc28d/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 3 Measure of Central Tendance and Dispersion</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af4ec9c50a970c358efe98/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 4 Measure of Central Tendance and Dispersion</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af4ff5c50a970c358f014f/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 1 Measure of Central Tendance and Dispersion</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af4d61c50a970c358efb47/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 5 Measure of Central Tendance and Dispersion</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af50e5c50a970c358f037b/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 7 Measure of Central Tendance and Dispersion</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af5289c50a970c358f0746/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 6 Measure of Central Tendance and Dispersion</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af5199e9eabfd04bdfcac2/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 2 Index Numbers</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/7pktk-2780066/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 3 Index Numbers</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/3viar-2786694/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 1 Index Numbers</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/9xz3r-2772984/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 1 Equation</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/o1k94-2790125/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 2 Equation</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/of91a-2790144/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 4 Equation</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/59i3u-2800043/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 3 Equation</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/owywk-2797326/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 5 Equation</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/kxws4-2804814/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 1 Linear Inequalities</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/kxdwv-2808893/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 2 Linear Inequalities</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/0dpu8-2812776/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 1  Permutation and Combination</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/d2s7p-2816331/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 3  Permutation and Combination</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/srmb8-2827729/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 5  Permutation and Combination</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/34r3g-2835110/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 2  Permutation and Combination</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/m3jqc-2824473/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 4  Permutation and Combination</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/iyb1v-2831811/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 1 Sequence & Series</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/pduzr-2839960/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 3 Sequence & Series</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/3if9o-2847449/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 2 Sequence & Series</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/polq3-2844137/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 4 Sequence & Series</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/c8x2d-2851621/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 1 Sets, Relation and function</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/cc/6e641a24485e412587ef152304420cc8/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 2 Sets, Relation and function</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/g1vnt-2872368/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 3 Sets, Relation and function</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/avbgj-2873954/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 4 Sets, Relation and function</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/xkxy0-2877321/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 5 Sets, Relation and function</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/ln7u3-2880724/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 1 Probability</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/8p1yc-2888877/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 2 Probability</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/cbw2u-2892762/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 3 Probability</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/j4cmn-2896093/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 5 Probability</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/a1vzx-2905362/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 4 Probability</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/7cdov-2901096/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 1 Theoretical Distributions</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/lbo0q-2909487/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 2 Theoretical Distributions</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/vx953-2913714/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Remaining of Theoretical Distribution and Part 1Correlation and Regression</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/8qmpp-2925597/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 3 Theoretical Distributions</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/vbkqt-2917616/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 4 Theoretical Distributions</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/ytt05-2920337/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Remaining of Theoretical Distribution and Part 1 Correlation and Regression</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/8qmpp-2925597/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 2 Correlation and Regression</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/sxrcf-2930553/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 3 Correlation and Regression</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/wri53-2938225/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 4 Correlation and Regression</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/lc/k636p-2941693/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Sampling</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66b0c774e9eabfd04be258bb/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 1 Limits and Continuity</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66b27135e9eabfd04be5786e/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 2 Basic Concepts of Differential and Integral Calculus</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66b4b91de9eabfd04be9b535/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Chapter wise Lectures & Notes) Part 1 Basic Concepts of Differential and Integral Calculus</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66b36941c50a970c35966e7e/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Lecture 1 Ratio Proportion Indices Logarithm Quantitative Aptitude</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af22fdc50a970c358ea150/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Lecture 2 Mathematics of Finance  Quantitative Aptitude</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af2426e9eabfd04bdf69be/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Lecture 3 Number Series Coding Decoding Odd Man Out  Quantitative Aptitude</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae1817e9eabfd04bddcdcf/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Lecture 4 Direction Test Quantitative Aptitude</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66f0fdac7cae3e5c2474a69f/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Lecture 5 Seating Arrangement  Quantitative Aptitude</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5ed3e9eabfd04bde80ec/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Lecture 6 Statistical Description of Data  Quantitative Aptitude</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5e8ac50a970c358db9e7/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Lecture 7  Measure Of Central Tendancy  and Dispersion  Quantitative Aptitude</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5ea8e9eabfd04bde8072/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Lecture 8 Equations Quantitative Aptitude</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5eb7c50a970c358dba67/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Lecture 9 Linear Inequalities  Quantitative Aptitude</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5e1ae9eabfd04bde7ee8/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Lecture 10 Blood Relation  Quantitative Aptitude</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5ea9e9eabfd04bde807a/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Lecture 11 Permutation and Combination  Quantitative Aptitude</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5ee1c50a970c358dbae1/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Lecture 12 Sequence and Series Quantitative Aptitude</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5e9be9eabfd04bde8050/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Lecture 13 Sets Relation and Function Quantitative Aptitude</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5ebcc50a970c358dba7c/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Lecture 14 Probability  Quantitative Aptitude</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5ea0e9eabfd04bde805c/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Lecture 15 Calculas Quantitative Aptitude</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5e7dc50a970c358db9c7/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Lecture 17 Index Numbers Quantitative Aptitude</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5ea4c50a970c358dba26/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Lecture 16 Correlation and regression  Quantitative Aptitude</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5ee3e9eabfd04bde811a/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Lecture 18 Theoretical Distribution  Quantitative Aptitude</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5ed5c50a970c358dbabe/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Nature & Scope OF Business ECO</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5e78e9eabfd04bde7fef/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) DEMAND</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5eabe9eabfd04bde8080/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) COST & PRODUCTION</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af5301e9eabfd04bdfcdf1/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) MARKET</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af53b5e9eabfd04bdfcf70/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) BUSINESS CYCLE</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66af53f1e9eabfd04bdfcff5/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Bank Reconcilation Statement May 2018</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/cc/99d78a57a03e49f3beaba02f6e4a09f8/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Bank Reconcillation Statement May 2019</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/cc/8e839a285ec949bf8f43ac643292eeb3/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Bank Reconcilation Statement Dec 2021</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/cc/d11bf04571d344b785ae071e73f53cea/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Bank Reconcilation Statement Dec 2023</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/cc/185f468c1eed4ea3a5cd987011e1e634/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Bank Reconcilation Statement Nov 2020</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/cc/39f6734658f64d0fa6459a0f936c2970/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Bank Reconciliation Statement -  NOV 2018</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773c515c4909c1c40356f27/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Bank Reconciliation Statement - Jan 2021</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773c516c4909c1c40356f2a/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Bank Reconciliation Statement - June 2024</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773c580c4909c1c40357261/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Bank Reconciliation Statement - June 2023</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773c580c4909c1c40357267/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Bank Reconciliation Statement - July 2021</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773c580c4909c1c40357263/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Bank Reconciliation Statement - Dec 2022</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773c6abc4909c1c40357bbe/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Bank Reconciliation Statement - May 2022</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773c6c1c4909c1c40357c69/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Bank Reconciliation Statement - Sept 2024</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773c6c1c4909c1c40357c64/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Bank Reconciliation Statement - Nov 2019</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773c6c1c4909c1c40357c66/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Rectification of Error May 2018</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/cc/afa08798c9c0471ab6ed1d850c977bf6/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Rectification of Errror May 2019</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/cc/371ea78dd12f4a31a14b5ddd4cf91388/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Rectification of Error Jan 2021</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/cc/8afd475bc74f4686bd5d2e9348b75415/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Rectification of Error</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/672dd186b29cac6843676c4a/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Rectification of Error Part 1  - Sept  2024</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773c9a5c4909c1c403593a6/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Rectification of Error Part 1  - Dec 2021</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773c9a3c4909c1c40359396/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Rectification of Error Part 1  - Dec 2022</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773c9a3c4909c1c4035938a/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Rectification of Error Part 1  - Nov 2019</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773c9a3c4909c1c40359390/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Rectification of Error Part 1  - July 2021</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773c9a3c4909c1c4035938e/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Rectification of Error Part 1  - june 2023</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773c9a6c4909c1c403593aa/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Rectification of Error Part 1  - Jun 2024</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773c9a3c4909c1c4035938c/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Rectification of Error Part 1 - Nov 2018</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773cb65c4909c1c4035a125/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Rectification of Error Part 2 - dec 2022</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773cba6c4909c1c4035a302/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Rectification of Error Part 2 - june 2023</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773cba6c4909c1c4035a304/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Rectification of Error Part 2 - june 2024</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773cba7c4909c1c4035a308/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Depreciation May 2019</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/cc/924f19251dab4e5883b5ab2aa1677412/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Depreciation Dec 2022</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/cc/c96439bf66ec452295096def23031c2f/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Depreciation June 2023</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/cc/dbc4b475e17e47008e25509e903abd06/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) ICAI Module Imp Practical Question</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/cc/5bb77ccbc62c4218bb5e340d467f3596/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Depreciation - June 2024</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773c872c4909c1c40358a22/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Depreciation - Nove 2018</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773c870c4909c1c40358a09/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Depreciation - Sept 2024</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773c870c4909c1c40358a0b/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Depreciation -Dec 2023</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773c872c4909c1c40358a2a/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Depreciation - Nov 2019</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773c872c4909c1c40358a26/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Depreciation - Jan 2021</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773c870c4909c1c40358a0c/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Depreciation -May 2022</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773c870c4909c1c40358a11/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Depreciation - July 2021</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773c870c4909c1c40358a0f/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Final Accounts Non Manufacturing May 2019</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/cc/f37e4602622e4f00a9bb4c30de9fd89e/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Final Account Non Manufacturing Nov 2020</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/cc/3f3ebf7561634a87a2fc9cf317af33fb/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Final Account Non Manufacturing Nov 2018</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/cc/a1d6c30820cf4186921a99401d581473/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Final Account Non Manufacturing May 2018</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/cc/482a69920bca44dbb71282d0a2c1782e/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Final Accounts Manufacturing Nov 2020</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/cc/66ace188db8d4f36ad312fdd43e00b72/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Final Account Manufacturing Dec 2021</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/cc/48c7b1e1f57f4ec3b59e7bd504fa0cb3/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Final Accounts manufacturing & non manufacturing - Jan 2021</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773ce67c4909c1c4035b889/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Final Accounts manufacturing & non manufacturing -  Dec 2023</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773ce66c4909c1c4035b882/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Final Accounts manufacturing & non manufacturing - Dec 2022</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773ce66c4909c1c4035b87a/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Final Accounts manufacturing & non manufacturing - June 2024</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773ce66c4909c1c4035b880/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Final Accounts manufacturing & non manufacturing - May 2022</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773ce66c4909c1c4035b87e/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Final Accounts manufacturing & non manufacturing - July 2021</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773ce69c4909c1c4035b89c/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Final Accounts manufacturing & non manufacturing - Nov 2019</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773cf86c4909c1c4035c12b/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) NPO May 2019</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/cc/cb8ab36e03e14958ab6c6686c9d84358/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) NPO Nov 2020</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/cc/5d9678701fdf4649a5479ef4d6bee9dc/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) NPO Jan 2021</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/cc/f5407b17518a4657916e07e53bb0bac1/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) NPO May 2022</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/cc/1f5d233e6fc442fba0fb9582a2d8c636/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Share Capital May 2018</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/cc/dcfe07b715584d8e9f35fb98b4b3199b/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Share Capital May 2019</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/cc/4e9e060aef8b4fd4a13d80c981d5076a/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Share Capital May 2022</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/cc/863c73f67217400cbd185ac9c7e0a8d2/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Share Capital Nov 2020</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/cc/aee85b1e407e43d99dee8e649aa50c17/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Share Capital June 2023</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/cc/ca0a898e8ea34553b6c26c906cb5f351/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Share Capital - June 2024</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773cca3c4909c1c4035aade/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Share Capital - Nov 2018</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773cca3c4909c1c4035aad3/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Share Capital - Dec 2023</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773cca3c4909c1c4035aacd/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Share Capital - Nov 2019</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773cca3c4909c1c4035aad6/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Share Capital Dec - 2022</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773cca3c4909c1c4035aad1/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Share Capital - Dec 2021</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773cca3c4909c1c4035aadc/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Share Capital - Jan 2021</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773cca3c4909c1c4035aacf/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Share Capital - July 2021</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773ce02c4909c1c4035b580/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Debenture May 2019</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/cc/4fa96667ba0d404c8db03d8612654575/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Debenture Nov 2020</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/cc/51a13fda7c3d401d8547bd9a546174b3/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Debenture - Nov 2018</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773c7a0c4909c1c403582f2/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Debenture - Sept 2024</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773c7a0c4909c1c403582f5/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Admission of Partner Dec 2021</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/cc/99768ba3b96640e5bcbeacb4f2041fc9/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Retirement of Partner Nov 2020</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/cc/79ff555cd1a24fac9f8acdb19d38befe/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Retirement of Partner May 2018</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/cc/1b633488aeb1423588d205f37b52b7d9/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Death of Partner May 2019</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/cc/9ef2234082674971bdc242d9f2ffc2c4/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Death of Parnter Jan 2021</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/cc/927750d767e94e1c8a57ba0b0ff6b6fa/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) BOE May 2019</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/cc/d89693c736c5436e89cf1de50663d5fa/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Bill of Exchange</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/672dd1fcb29cac6843676f38/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Bills of exchange - Sept 2024</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773cd7ec4909c1c4035b169/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Bills of exchange - Dec 2022</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773cd7cc4909c1c4035b153/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Bills of exchange - June 2023</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773cd7cc4909c1c4035b14f/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Bills of exchange -  Dec 2021</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773d0d0c4909c1c4035cafb/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Inventory May 2019</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/cc/19c2d6fb0ccb4bb1b12de0c93d778e4a/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Inventory  Nov 2020</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/cc/3dbe5423addd409a9d0e680b1fe723dd/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Inventory May 2022</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/cc/7b75dab1f3b1474ca18aa08f1c5fc806/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Inventory - Dec 2023</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773c7f9c4909c1c4035861a/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Inventory -  Dec 2021</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773c7fac4909c1c40358622/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Inventory - June 2024</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773c7f9c4909c1c40358613/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Inventory - Jan 2021</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773c7f9c4909c1c40358620/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Inventory - Sept 2024</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773c7f9c4909c1c40358617/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Cash Book and Subsidiary Books Nov 2020</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/cc/5491607f7a614b989f9216549159e58e/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Cash Book and Subsidiary Books Dec 2023</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/cc/141e67425e7848e5a1ffcd990a5d6483/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Accounting for Incomplete Record June 2024</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773cebcc4909c1c4035bb1b/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Redemption of Debenture - sept  2024</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773ca1cc4909c1c40359717/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Redemption of ps - june 2024</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773ca1fc4909c1c4035972c/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Bonus & Right Issue - june 2024</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/6773ca1cc4909c1c40359719/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Lecture 1 Chapter 5 -The Limited Liability Partnership  Act, 2008 Business Law</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5e80e9eabfd04bde8006/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(PYQs) Lecture 2 Chapter 4 - The  Indian  Partnership, 1932 Business Law</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66ae5ee0e9eabfd04bde8110/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Additional Questions Series) Lecture 1 Ratio Proportion Indices and Logarithm</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66c0317fe9eabfd04bfee823/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Additional Questions Series) Lecture 2 Mathematics of finance Additional Question</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66c461d5c50a970c35b44e5e/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Additional Questions Series) Lecture 3 Equations</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66c71bf3d8987508ec816fca/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) Part 1 Basics of Accounts</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/cc/3cd2f380babc4da9b5b5ff4f9f372d39/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) Part 2 Basics of Accounts</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/cc/a54c49b9dc9049fdbd9bc62ce35c36a5/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) Part 3 Basics of Accounts</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/cc/faf63ec19d7747f98a77edbcf08b88b8/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) Part 4 Basics of Accounts</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/cc/90e8d24287be46d0a3b8eb53bdc99846/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) Part 5 Basics of Accounts</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/570645/cc/b9297d5313db43be8f058a7d112da9ad/master.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) Accounting Assumption & Principle L1</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cd9c4dd8987508ec997c76/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) Accounting Assumption & Principle L2</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cd9c4dd8987508ec997c78/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) BRS L1</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cd9a39d8987508ec99703d/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) BRS L2</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cd9854d8987508ec996490/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) BRS L3</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cd9854d8987508ec99648c/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) BRS L4</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cd9854d8987508ec996486/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) BRS L5</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cd9854d8987508ec99648e/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) BRS L6</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cd9854d8987508ec996492/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) BRS L6 Last 2Mins Imp Discussion</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cd9af7d8987508ec9974d8/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) ROE L1</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cc864fd8987508ec95d045/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) ROE L2</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cc864fd8987508ec95d04a/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) ROE L3</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cc864fd8987508ec95d047/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) ROE L4</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cc8650d8987508ec95d050/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) ROE L5</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cc864fd8987508ec95d043/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) Depreciation L1</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cc8cf9d8987508ec95f461/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) Depreciation L2</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cc8cf9d8987508ec95f45b/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) Depreciation L3</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cc8cf9d8987508ec95f465/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) Depreciation L4</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cc8cf9d8987508ec95f45f/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) Depreciation L5</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cc8cf9d8987508ec95f45d/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) Depreciation L6</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cc8cf9d8987508ec95f463/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) Final Accounts Non Manufacturing L1</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cc9da7d8987508ec9641f5/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) Final Accounts Non Manufacturing L2</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cc9da7d8987508ec9641fb/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) Final Accounts Non Manufacturing L3</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cc9da7d8987508ec9641f7/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) Final Accounts Non Manufacturing L4</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cc9da8d8987508ec9641fe/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) Final Accounts Non Manufacturing L5</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66d6b76299d974d9cad6ae82/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) Final Accounts Manufacturing L1</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cc9db5d8987508ec964250/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) Final Accounts Manufacturing L2</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cc9db5d8987508ec96424d/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) Incomplete Record L1</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cd93b4d8987508ec994902/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) Incomplete Record L2</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cd93b4d8987508ec9948ff/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) Incomplete Record L3</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cd93b5d8987508ec994907/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) Incomplete Record L4</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cd93b4d8987508ec9948fd/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) Incomplete Record L5</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cd93b4d8987508ec994904/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) NPO L1</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cc9396d8987508ec96133d/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) NPO L2</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cc9396d8987508ec961334/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) NPO L3</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cc9397d8987508ec961344/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) NPO L4</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cc9396d8987508ec961340/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) NPO L5</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cc9396d8987508ec961336/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) NPO L6</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cc9396d8987508ec96133a/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) Share Capital L1</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cc936fd8987508ec961279/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) Share Capital L2</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cc936fd8987508ec961278/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) Share Capital L3</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cc936fd8987508ec961276/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) Share Capital L4</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cc936fd8987508ec96127e/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) Share Capital L5</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cc936fd8987508ec961285/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) Share Capital L6</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cc936fd8987508ec96127c/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) Share Capital L7</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cc936fd8987508ec961281/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) Share Capital L8</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cc936fd8987508ec961280/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) Debenture L1</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cd7744d8987508ec98a831/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) Debenture L2</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cd7742d8987508ec98a822/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) Debenture L3</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cd7742d8987508ec98a81f/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) Redemption of PS L1</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cd94f0d8987508ec99503c/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) Redemption of PS L2</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cd94f0d8987508ec995040/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) Redemption of PS L3</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cd94f0d8987508ec99503a/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) Redemption of Debenture L1</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cc6b38d8987508ec95301d/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) Redemption of Debenture L3</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cc6b36d8987508ec95300b/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) Redemption of Debenture L2</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cc6b38d8987508ec953019/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) Bonus & Right Issue L1</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cc6b47d8987508ec95306e/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) Bonus & Right Issue L2</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66d6cfd699d974d9cad742bb/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) Bonus & Right Issue L3</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cc6e67d8987508ec95436f/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) Partnership Lecture 1</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cc6e93d8987508ec95448e/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) Partnership Lecture 2</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cc6e93d8987508ec9544a0/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) Partnership Lecture 3</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cc6e93d8987508ec954490/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) Partnership Lecture 4</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cc6e93d8987508ec95449c/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) Partnership Lecture 5</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cc6e93d8987508ec954496/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) Partnership Lecture 6</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cc6e93d8987508ec954498/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) Partnership Lecture 7</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cc6e93d8987508ec954492/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) Partnership Lecture 8</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cc6e93d8987508ec95449a/playlist.m3u8")'>▶</div>
+                </div>
+
+                <div class="content-card video-card">
+                    <a>(Accounts Detailed Session in Summarised Form) Partnership Lecture 9</a>
+                    <div class="play-button" onclick='playVideo("https://media-cdn.classplusapp.com/drm/66cc6e93d8987508ec954494/playlist.m3u8")'>▶</div>
+                </div>
+            </div>
+            <div class="no-results" id="noResults" style="display: none;">
+                No matching content found
+            </div>
+        </div>
+    </div>
+    <div class="player-container" id="playerContainer">
+        <div class="player-wrapper">
+            <div class="close-player" onclick="closePlayer()">×</div>
+            <iframe id="videoPlayer" allowfullscreen allow="autoplay; fullscreen"></iframe>
+        </div>
+    </div>
+    <script>
+        // Prevent scrolling issues
+        let touchStartY = 0;
+        let touchEndY = 0;
+        const minSwipeDistance = 10;
+
+        document.addEventListener('touchstart', function(e) {
+            touchStartY = e.touches[0].clientY;
+        }, { passive: true });
+
+        document.addEventListener('touchend', function(e) {
+            touchEndY = e.changedTouches[0].clientY;
+            const swipeDistance = Math.abs(touchEndY - touchStartY);
+            if (swipeDistance < minSwipeDistance) {
+                const target = e.target;
+                if (target.classList.contains('play-button')) {
+                    const url = target.getAttribute('data-url');
+                    if (url) playVideo(url);
+                }
+            }
+        }, { passive: true });
+
+        // Improved search functionality
+        const searchInput = document.getElementById('searchInput');
+        const contentGrid = document.getElementById('contentGrid');
+        const noResults = document.getElementById('noResults');
+        const contentCards = document.querySelectorAll('.content-card');
+        let searchTimeout;
+
+        function normalizeText(text) {
+            return text.toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^a-z0-9\s]/g, '');
+        }
+
+        function performSearch() {
+            const searchTerm = normalizeText(searchInput.value);
+            let hasResults = false;
+            let visibleCount = 0;
+
+            contentCards.forEach(card => {
+                const title = normalizeText(card.querySelector('a').textContent);
+                const isMatch = searchTerm === '' || title.includes(searchTerm);
+                
+                if (isMatch) {
+                    card.style.display = 'block';
+                    hasResults = true;
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            noResults.style.display = hasResults ? 'none' : 'block';
+            
+            // Update grid columns based on visible items
+            if (window.innerWidth > 768) {
+                contentGrid.style.gridTemplateColumns = visibleCount === 1 ? '1fr' : 'repeat(auto-fill, minmax(300px, 1fr))';
+            }
+        }
+
+        // Debounced search with proper cleanup
+        function debounceSearch() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(performSearch, 150);
+        }
+
+        searchInput.addEventListener('input', debounceSearch);
+        searchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                this.value = '';
+                performSearch();
+            }
+        });
+
+        // Initialize content cards
+        document.querySelectorAll('.content-card').forEach(card => {
+            const link = card.querySelector('a');
+            const url = link.getAttribute('onclick')?.match(/'([^']+)'/)?.[1];
+            if (url) {
+                // Remove the onclick attribute
+                link.removeAttribute('onclick');
+                
+                // Add content icon
+                const iconDiv = document.createElement('div');
+                iconDiv.className = 'content-icon';
+                link.insertBefore(iconDiv, link.firstChild);
+                
+                // Add action button based on content type
+                const actionButton = document.createElement('div');
+                if (url.toLowerCase().endsWith('.pdf')) {
+                    card.classList.add('pdf-card');
+                    actionButton.className = 'play-button';
+                    actionButton.innerHTML = '📄';
+                    actionButton.setAttribute('data-url', url);
+                    actionButton.onclick = () => window.open('https://docs.google.com/viewer?url=' + encodeURIComponent(url), '_blank');
+                } else {
+                    card.classList.add('video-card');
+                    actionButton.className = 'play-button';
+                    actionButton.innerHTML = '▶';
+                    actionButton.setAttribute('data-url', url);
+                    actionButton.onclick = () => playVideo(url);
+                }
+                card.appendChild(actionButton);
+            }
+        });
+
+        function playVideo(url) {
+            const playerContainer = document.getElementById('playerContainer');
+            const videoPlayer = document.getElementById('videoPlayer');
+            const loading = document.getElementById('loading');
+            
+            if (!url) return;
+            
+            loading.classList.add('active');
+            playerContainer.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            
+            videoPlayer.src = 'https://api.extractor.workers.dev/player?url=' + encodeURIComponent(url);
+            videoPlayer.onload = () => {
+                loading.classList.remove('active');
+            };
+
+            history.pushState({ player: 'open' }, '');
+
+            try {
+                if (screen.orientation && screen.orientation.lock) {
+                    screen.orientation.lock('landscape').catch(() => {});
+                }
+            } catch (e) {}
+        }
+
+        function closePlayer() {
+            const playerContainer = document.getElementById('playerContainer');
+            const videoPlayer = document.getElementById('videoPlayer');
+            videoPlayer.src = '';
+            playerContainer.classList.remove('active');
+            document.body.style.overflow = '';
+
+            // Unlock screen orientation if supported
+            try {
+                if (screen.orientation && screen.orientation.unlock) {
+                    screen.orientation.unlock();
+                }
+            } catch (e) {}
+        }
+
+        // Update escape key and back button handlers to only handle video player
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closePlayer();
+            }
+        });
+
+        window.addEventListener('popstate', function() {
+            if (document.getElementById('playerContainer').classList.contains('active')) {
+                closePlayer();
+            }
+        });
+
+        // Lazy loading for images/iframes
+        document.addEventListener('DOMContentLoaded', function() {
+            const lazyElements = document.querySelectorAll('[data-src]');
+            
+            if ('IntersectionObserver' in window) {
+                const lazyLoad = target => {
+                    const io = new IntersectionObserver((entries, observer) => {
+                        entries.forEach(entry => {
+                            if (entry.isIntersecting) {
+                                const element = entry.target;
+                                element.src = element.dataset.src;
+                                observer.disconnect();
+                            }
+                        });
+                    });
+                    io.observe(target);
+                };
+                lazyElements.forEach(lazyLoad);
+            } else {
+                // Fallback for older browsers
+                lazyElements.forEach(element => {
+                    element.src = element.dataset.src;
+                });
+            }
+        });
+
+        // Add active state for mobile touches
+        document.querySelectorAll('.content-card').forEach(card => {
+            card.addEventListener('touchstart', function() {
+                this.classList.add('active');
+            });
+            card.addEventListener('touchend', function() {
+                this.classList.remove('active');
+            });
+        });
+    </script>
+
+<script src="https://static.app/js/static.js" type="text/javascript"></script>
+</body>
+</html> 
